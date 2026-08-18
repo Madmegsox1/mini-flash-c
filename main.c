@@ -103,10 +103,6 @@ int main( void ){
     fflush(stdout);
   }
 
-  if(ferror(output)){
-    perror("fread");
-  }
-
   fclose(output);
 
   return 0;
