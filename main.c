@@ -13,6 +13,7 @@
 
 
 int main( void ){
+  int r_val = 0;
   FILE *firmware = fopen("./test-firmware.bin", "rb");
   fseek(firmware, 0, SEEK_END);
 
@@ -34,9 +35,18 @@ int main( void ){
   usb_create_handle(RP_VID, RP2350_BOOT_PID, &dev, &ctx);
 
   if(!dev){
-    printf("Failed to get device handle \n");
-    return 1;
+    printf("Failed to get device handle trying to force boot\n");
+    ctx = NULL;
+
+    int ret = usb_force_boot(RP_VID, RP2350_BOOT_PID, "/dev/ttyACM0", &dev, &ctx);
+    if(ret != 0){
+      printf("Failed to force boot\n");
+      r_val = ret;
+      goto cleanup;
+    }
   }
+
+  printf("Got USB Handle\n");
   
   uint8_t eps[2] = {0,0};
 
@@ -53,12 +63,14 @@ int main( void ){
 
   if(iface < 0) {
     printf("Failed to get interface\n");
-    return 1;
+    r_val = 1;
+    goto cleanup;
   }
 
   if(usb_claim_inf(dev,iface) != 0){
     printf("Failed to claim interface\n");
-    return 1;
+    r_val = 1;
+    goto cleanup;
   }
 
   struct pico_firmware pico_firm = {erase_size, firmware_size, &firmware_byte};
@@ -67,13 +79,16 @@ int main( void ){
 
   if(flash != 0){
     printf("Failed to flash pico\n");
-    return 1;
+    r_val = 1;
+    goto cleanup;
   }
 
-  free(firmware_byte);
+  cleanup:
+    free(firmware_byte);
 
-  libusb_close(dev);
-  libusb_exit(ctx);
+    libusb_close(dev);
+    libusb_exit(ctx);
+    if(r_val != 0) return r_val;
 
   // we need to wait for the microcontroller to come online
 
