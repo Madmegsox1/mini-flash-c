@@ -12,9 +12,20 @@
 #define RP2350_BOOT_PID 0x000f
 
 
-int main( void ){
+int main( int argc, char * argv[] ){
+  const char * firmware_f_name = "";
+
+  if(argc <= 1){
+    printf("pico-flash [-f, -l] [firmware.bin | /dev/ttyACM0]");
+    return 1;
+  }
+
+  if(argc > 1){
+    firmware_f_name = argv[1];
+  }
+
   int r_val = 0;
-  FILE *firmware = fopen("./test-firmware.bin", "rb");
+  FILE *firmware = fopen(firmware_f_name, "rb");
   fseek(firmware, 0, SEEK_END);
 
   long firmware_size = ftell(firmware);
