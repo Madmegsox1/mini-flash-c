@@ -60,8 +60,8 @@ int usb_force_boot(uint16_t vender_id, uint16_t device_id, const char *tty, libu
   }
 
 
-  sleep(1);
   fclose(f);
+  sleep(2);
 
   usb_create_handle(vender_id, device_id, dev, ctx);
   

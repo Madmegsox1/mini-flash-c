@@ -7,21 +7,56 @@
 #include <unistd.h>
 #include "usb.h"
 #include "flash.h"
+#include "com.h"
 
 #define RP_VID 0x2e8a
 #define RP2350_BOOT_PID 0x000f
 
 
+enum MODE {
+  FLASH,
+  LISTEN
+};
+
+typedef int MODE;
+
+
 int main( int argc, char * argv[] ){
   const char * firmware_f_name = "";
+  const char * f_dev = "";
+  MODE mode = -1;
+
 
   if(argc <= 1){
-    printf("pico-flash [-f, -l] [firmware.bin | /dev/ttyACM0]");
+    printf("picoflash [-f, -l] [firmware.bin | /dev/ttyACM0]");
     return 1;
   }
 
-  if(argc > 1){
-    firmware_f_name = argv[1];
+  if(strcmp("-f", argv[1]) == 0){
+    mode = FLASH;
+  }
+  else if(strcmp("-l", argv[1]) == 0){
+    mode = LISTEN;
+  }
+  else {
+    printf("picoflash [-f, -l] [firmware.bin | /dev/ttyACM0]");
+    return 1;
+  }
+
+  if(argc > 2){
+    firmware_f_name = argv[2];
+  }
+  else if(mode == LISTEN) {
+    f_dev = "/dev/ttyACM0";
+  }
+  else {
+    printf("picoflash [-f, -l] [firmware.bin | /dev/ttyACM0]");
+    return 1;
+  }
+
+
+  if(mode == LISTEN){
+    return open_com_out(f_dev);
   }
 
   int r_val = 0;
@@ -103,33 +138,7 @@ int main( int argc, char * argv[] ){
 
   // we need to wait for the microcontroller to come online
 
-  size_t count = 0;
-  FILE* output = NULL;
-  while(output == NULL)
-  {
-    output = fopen("/dev/ttyACM0", "rb");
-    if(output != NULL) break;
-    count++;
-    printf("\rTying to open output (Trys: %zu)", count);
-    fflush(stdout);
-    sleep(1);
-  }
-
-  printf("\nSuccessfuly got connection from /dev/ttyACM0\n");
-
-  if(output == NULL){
-    printf("Failed to open device\n");
-    return 1;
-  }
-
-  int c;
-
-  while((c = fgetc(output)) != EOF) {
-    putchar(c);
-    fflush(stdout);
-  }
-
-  fclose(output);
+  open_com_out("/dev/ttyACM0");
 
   return 0;
 }
