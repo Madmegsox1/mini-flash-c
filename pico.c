@@ -167,13 +167,13 @@ int picoboot_command (libusb_device_handle *dev, int iface, uint8_t ep_in, uint8
     transferred = 0;
     uint8_t endpoint = command_is_in ? ep_in : ep_out;
 
-    libusb_bulk_transfer(dev, endpoint, (unsigned char *) data, cmd->transfer_length, &transferred, 10000);
+    ret = libusb_bulk_transfer(dev, endpoint, (unsigned char *) data, cmd->transfer_length, &transferred, 10000);
 
     if(ret < 0){
       struct picoboot_cmd_status status;
 
       if(picoboot_get_status(dev, iface, &status) == 0){
-        printf("Failed running command %u with status code %u", status.command, status.status_code);
+        printf("Failed running command %u with status code %u (in progress: %u)\n", status.command, status.status_code, status.in_progress);
       }
       
       return ret;
@@ -191,20 +191,20 @@ int picoboot_command (libusb_device_handle *dev, int iface, uint8_t ep_in, uint8
 
   if(command_is_in){
     // Just got a command in so ACK goes back out
-    ret = libusb_bulk_transfer(dev, ep_out, &empty, 0, &transferred, 3000);
+    ret = libusb_bulk_transfer(dev, ep_out, &empty, 0, &transferred, PICOBOOT_ACK_TIMEOUT_MS);
   }
   else{
     // Just sent a command so should get a ACK back in
-    ret = libusb_bulk_transfer(dev, ep_in, &empty, 1, &transferred, 3000);
+    ret = libusb_bulk_transfer(dev, ep_in, &empty, 1, &transferred, PICOBOOT_ACK_TIMEOUT_MS);
   }
 
 
   if(ret < 0){
-    printf("ACK FAILED");
+    printf("ACK FAILED\n");
     struct picoboot_cmd_status status;
 
     if(picoboot_get_status(dev, iface, &status) == 0){
-      printf("Failed running command %u with status code %u", status.command, status.status_code);
+      printf("Failed running command %u with status code %u (in progress: %u)\n", status.command, status.status_code, status.in_progress);
     }
 
     return ret;

@@ -5,7 +5,8 @@
 #include <stdint.h>
 #define FLASH_ADDRESS 0x10000000u
 #define FLASH_PAGE_SIZE 256u
-#define FLASH_SECTOR_SIZE 4096u 
+#define FLASH_SECTOR_SIZE 4096u
+#define FLASH_BLOCK_SIZE 65536u
 
 struct pico_firmware {
   size_t erase_size;

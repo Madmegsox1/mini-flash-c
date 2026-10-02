@@ -25,14 +25,27 @@ int flash_pico(libusb_device_handle *dev, int iface, uint8_t ep_in, uint8_t ep_o
     return ret;
   }
 
-  printf("Erased Flash\n...");
+  // Erase in blocks: the ACK only arrives once the erase finishes, so one big
+  // erase can outlast the USB timeout
+  for(size_t offset = 0; offset < firmware.erase_size; offset += FLASH_BLOCK_SIZE){
+    size_t remaining = firmware.erase_size - offset;
+    size_t erase_size = remaining < FLASH_BLOCK_SIZE ? remaining : FLASH_BLOCK_SIZE;
 
-  ret = picoboot_flash_erase(dev, iface, ep_in, ep_out, FLASH_ADDRESS, firmware.erase_size);
+    uint32_t address = FLASH_ADDRESS + (uint32_t) offset;
 
-  if(ret != 0) {
-    printf("Failed to erase the flash: %d\n", ret);
-    return ret;
+    ret = picoboot_flash_erase(dev, iface, ep_in, ep_out, address, erase_size);
+
+    if(ret != 0) {
+      printf("\nFailed to erase the flash at 0x%08x : %d\n", address, ret);
+      return ret;
+    }
+
+    printf("\rErasing: %zu / %zu", offset + erase_size, firmware.erase_size);
+
+    fflush(stdout);
   }
+
+  printf("\nErase finished\n");
 
   uint8_t page[FLASH_PAGE_SIZE];
   

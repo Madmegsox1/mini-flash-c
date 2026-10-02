@@ -11,6 +11,9 @@
 
 #define PICOBOOT_FLASH_UPDATE_FLAG 0x04
 
+// ACK is only sent once the command completes (e.g. a flash erase), picotool uses 10s too
+#define PICOBOOT_ACK_TIMEOUT_MS 10000
+
 #define DEBUG_ALL_COMMANDS 1
 #define VEBOSE_DEBUG_ALL_COMMANDS 0
 
